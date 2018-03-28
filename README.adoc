@@ -4,7 +4,7 @@
 
 = Spring Security 이해하기
 
-이 가이드는 Spring Security에 대한 입문서로 이 프레임워크의 디자인과 기본 구조 단위를 간파할 수 있도록 제공해준다. 우리는 오직 애플케이션 보안의 매우 기본들을 다루지만, 그렇게함으로써 Spring Security를 사용하는 개발자들이 겪었던 혼란의 일부를 해결할 수 있다. 이를 위해 filter를 사용하는 웹 애플리케이션에서 보안이 적용되는 방식을 살펴보고 보다 일반적으로 사용하는 method annotations들을 다뤄본다. 이 가이드는 애플리케이션 보안의 동작 원리와 커스텀되어질 수 있는 방법을 이해해야 하거나 애플리케이션의 보안에 대해 생각하는 방법을 배워야할 필요가 있다면 사용해라.
+이 가이드는 Spring Security에 대한 입문서로 이 프레임워크의 디자인과 기본 구조 단위를 간파할 수 있도록 제공해준다. 우리는 오직 애플케이션 보안의 매우 기본들을 다루지만, 그렇게함으로써 Spring Security를 사용하는 개발자들이 겪었던 혼란의 일부를 해결할 수 있다. 이를 위해 filter를 사용하는 웹 애플리케이션에서 보안이 적용되는 방식을 살펴보고 보다 일반적으로 사용하는 method annotation들을 다뤄본다. 이 가이드는 애플리케이션 보안의 동작 원리와 커스텀되어질 수 있는 방법을 이해해야 하거나 애플리케이션의 보안에 대해 생각하는 방법을 배워야할 필요가 있다면 사용해라.
 
 이 가이드는 가장 기본적인 문제들 이상의 것을 해결하기 위한 매뉴얼이나 방법를 제공하지 않지만, 초보자와 전문가 모두에게 유용할 수 있다. Spring Boot는 애플리케이션 보안에 대한 기본 동작 일부를 제공하기 때문에 전체 아키텍처와 어떻게 잘 맞는지 이해하는 것에 유용할 수 있다. 모든 원칙은 Spring Boot를 사용하지 않는 애플리케이션에도 똑같이 적용된다.
 
@@ -38,7 +38,7 @@ public interface AuthenticationManager {
 
 `AuthenticationException` 은 runtime exception이다. 보통 애플리케이션의 스타일이나 용도에 따른 일반적인 방식으로 애플리케이션에서 처리된다. 다시 말해서 사용자 코드는 일반적으로 이를 잡아서 처리하지 못 한다. 예를 들어, 웹 UI는 인증이 실패했다는 것을 나타내는 페이지를 렌더링 하고, 백엔드 HTTP 서비스는 컨텍스트에 따라 `WWW-Authenticate` header의 유무와 상관없이 401 응답을 보낼 것 이다.
 
-`AuthenticationManager` 의 가장 일반적으로 사용되는 구현은 `ProviderManager` 는 `AuthenticationProvider` 인스턴스들의 체인에 위임한다. `AuthenticationProvider` 는 `AuthenticationManager` 와 약간 비슷하다. 하지만, `AuthenticationProvider` 는 호출자가 주어진 `Authentication` 타입을 지원 하는지를 질의 할 수 있는 추가 메소드가 있다 :
+`AuthenticationManager` 의 가장 일반적으로 사용되는 구현은 `ProviderManager` 는 일련의 `AuthenticationProvider` 인스턴스들에 위임한다. `AuthenticationProvider` 는 `AuthenticationManager` 와 약간 비슷하다. 하지만, `AuthenticationProvider` 는 호출자가 주어진 `Authentication` 타입을 지원 하는지를 질의 할 수 있는 추가 메소드가 있다 :
 
 [source,java]
 ----
@@ -52,36 +52,19 @@ public interface AuthenticationProvider {
 }
 ----
 
-The `Class<?>` argument in the `supports()` method is really `Class<?
-extends Authentication>` (it will only ever be asked if it supports
-something that will be passed into the `authenticate()` method).  A
-`ProviderManager` can support multiple different authentication
-mechanisms in the same application by delegating to a chain of
-`AuthenticationProviders`. If a `ProviderManager` doesn't recognise a
-particular `Authentication` instance type it will be skipped.
+`supports()` 메소드의 `Class<?>` 어규먼트는 실제로 `Class<? extends authentication>` 이다. (`authenticate()` 메소드에 전달 될 항목을 지원하는지 여부를 묻는 메시지만 표시됨) `ProviderManager` 는 일련의 `AuthenticationProvider` 에 위임하여 동일 애플리케이션 안에서 여러 인증 메커니즘을 지원할 수 있다. `ProviderManager` 가 특정 `Authentication` 인스턴스 타입을 인식하지 못하면 `ProviderManager` 는 건너뛴다.
 
-A `ProviderManager` has an optional parent, which it can consult if
-all providers return `null`. If the parent is not available then a
-`null` `Authentication` results in an `AuthenticationException`.
+`ProviderManager` 는 선택적 부모를 가지고 있어 모든 프로바이더가 `null` 을 돌려주는 경우에는 참고 한다. 만약 부모를 이용할 수 없는 경우, `null` `Authentication` 결과는 `AuthenticationException` 가 된다.
 
-Sometimes an application has logical groups of protected resources
-(e.g. all web resources that match a path pattern `/api/{all}`), and
-each group can have its own dedicated `AuthenticationManager`. Often,
-each of those is a `ProviderManager`, and they share a parent. The
-parent is then a kind of "global" resource, acting as a fallback for
-all providers.
+때때로 애플리케이션이 보호된 리소스(예. `/api/{all}` 패턴과 일치하는 모든 웹 리소스)의 논리적인 그룹들이 있고, 각각의 그룹들은 고유한 `AuthenticationManager` 를 가지고 있을 수 있다. 각각의 그룹은 `ProviderManager` 이며, 부모와 공유한다. 그런 다음 부모는 일종의 "글로벌" 리소스로서, 모든 프로바이더에 대한 대체 역할을 한다.
 
-.An `AuthenticationManager` hierarchy using `ProviderManager`
+.`ProviderManager` 를 사용하는 `AuthenticationManager` 계층 구조
 image::{images}/authentication.png[ProviderManagers with a common parent,70%]
 
-=== Customizing Authentication Managers
 
-Spring Security provides some configuration helpers to quickly get
-common authentication manager features set up in your application. The
-most commonly used helper is the `AuthenticationManagerBuilder` which
-is great for setting up in-memory, JDBC or LDAP user details, or for
-adding a custom `UserDetailsService`. Here's an example of an
-application configuring the global (parent) `AuthenticationManager`:
+=== 인증 관리자 커스터마이징
+
+Spring Security는 당신의 애플리케이션에 설정된 공통 인증 관리자 기능을 신속하게 가져올 수 있는 몇 가지 구성 헬퍼를 제공한다. 가장 일반적으로 사용되는 헬퍼는 in-memory, JDBC 또는 LDAP 사용자 세부 정보를 설정하거나 사용자 정의 `UserDetailsService` 를 추가 하는데 유용한 `AuthenticationManagerBuilder` 이다. 다음은 전역 (부모) `AuthenticationManager` 를 구성하는 애플리케이션의 예이다:
 
 [source, java]
 ----
@@ -99,12 +82,7 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 }
 ----
 
-This example relates to a web application, but the usage of
-`AuthenticationManagerBuilder` is more widely applicable (see below
-for more detail on how web application security is implemented). Note
-that the `AuthenticationManagerBuilder` is `@Autowired` into a method
-in a `@Bean` - that is what makes it build the global (parent)
-`AuthenticationManager`. In contrast if we had done it this way:
+이 예제는 웹 애플리케이션과 관련되어 있지만 `AuthenticationManagerBuilder` 의 사용법은 보다 광범위하게 적용될 수 있다 (웹 애플리케이션 보안 구현 방법에 대한 자세한 내용은 아래 참조). `AuthenticationManagerBuilder` 는 `@Bean` 의 메소드에 `@Autowired` 된다는 점에 유의해라. 이것은 전역 (부모) `AuthenticationManager` 를 만드는 부분이다. 대조적으로 우리가 이 방법으로 했을 경우:
 
 [source, java]
 ----
@@ -125,21 +103,10 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 }
 ----
 
-(using an `@Override` of a method in the configurer) then the
-`AuthenticationManagerBuilder` is only used to build a "local"
-`AuthenticationManager`, which is a child of the global one. In a
-Spring Boot application you can `@Autowired` the global one into
-another bean, but you can't do that with the local one unless you
-explicitly expose it yourself.
+(configurer의 메소드의 `@Override` 를 사용하면) `AuthenticationManagerBuilder` 는 오직 "local" `AuthenticationManager` 를 구축하는데 사용된다. Spring Boot에서는 전역 bean을 다른 bean에 `@Autowired` 할 수는 있지만, 명시적으로 직접 노출하지 않는 한 지역 bean으로는 할 수 없다.
 
-Spring Boot provides a default global `AuthenticationManager` (with
-just one user) unless you pre-empt it by providing your own bean of
-type `AuthenticationManager`. The default is secure enough on its own
-for you not to have to worry about it much, unless you actively need a
-custom global `AuthenticationManager`. If you do any configuration
-that builds an `AuthenticationManager` you can often do it locally to
-the resources that you are protecting and not worry about the global
-default.
+Spring Boot는 `AuthenticationManager` 타입의 bean을 제공함으로써 먼저 차지하지 않는 한 (하나의 user만 가진) 기본 전역 `AuthenticationManager` 를 제공한다. 기본값은 사용자 정의 전역 `AuthenticationManager` 를 적극적으로 필요로 하지 않는다면, 걱정할 필요가 없을 정도로 충분히 안전하다. `AuthenticationManager` 를 만드는 설정을 하는 경우는 보호하고 있는 리소스에 대해서 지역적으로 수행할 수 있고 전역의 기본에 대해서는 걱정하지 마라.
+
 
 === Authorization or Access Control
 
@@ -512,8 +479,7 @@ public class ApplicationConfiguration extends AsyncConfigurerSupport {
   @Override
   public Executor getAsyncExecutor() {
     return new DelegatingSecurityContextExecutorService(Executors.newFixedThreadPool(5));
-  }  
+  }
 
 }
 ----
-
