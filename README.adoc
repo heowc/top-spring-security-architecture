@@ -108,17 +108,11 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 Spring Boot는 `AuthenticationManager` 타입의 bean을 제공함으로써 먼저 차지하지 않는 한 (하나의 user만 가진) 기본 전역 `AuthenticationManager` 를 제공한다. 기본값은 사용자 정의 전역 `AuthenticationManager` 를 적극적으로 필요로 하지 않는다면, 걱정할 필요가 없을 정도로 충분히 안전하다. `AuthenticationManager` 를 만드는 설정을 하는 경우는 보호하고 있는 리소스에 대해서 지역적으로 수행할 수 있고 전역의 기본에 대해서는 걱정하지 마라.
 
 
-=== Authorization or Access Control
+=== 권한 부여 또는 액세스 제어
 
-Once authentication is successful, we can move on to authorization,
-and the core strategy here is `AccessDecisionManager`. There are three
-implementations provided by the framework and all three delegate to a
-chain of `AccessDecisionVoter`, a bit like the `ProviderManager`
-delegates to `AuthenticationProviders`.
+일단 인증이 성공하면 권한 부여단계로 넘어갈 수 있으며, 여기서 핵심 전략은 `AccessDecisionManager` 이다. 프레임워크가 제공하는 세 가지 구현하고 `ProviderManager` 와 약간 비슷한 `AccessDecisionVoter` 의 3개 대표 모두가 `AuthenticationProviders` 에 위임한다.
 
-An `AccessDecisionVoter` considers an `Authentication` (representing a
-principal) and a secure `Object` which as been decorated with
-`ConfigAttributes`:
+`AccessDecisionVoter` 는 `Authentication` (principal를 나타냄) 와 `ConfigAttributes` 로 꾸며진 안전한 `Object` 를 주시한다.
 
 [source, java]
 ----
@@ -130,32 +124,11 @@ int vote(Authentication authentication, S object,
         Collection<ConfigAttribute> attributes);
 ----
 
-The `Object` is completely generic in the signatures of the
-`AccessDecisionManager` and `AccessDecisionVoter` - it represents
-anything that a user might want to access (a web resource or a method
-in a Java class are the two most common cases). The `ConfigAttributes`
-are also fairly generic, representing a decoration of the secure
-`Object` with some metadata that determine the level of permission
-required to access it. `ConfigAttribute` is an interface but it only
-has one method which is quite generic and returns a `String`, so these
-strings encode in some way the intention of the owner of the resource,
-expressing rules about who is allowed to access it. A typical
-`ConfigAttribute` is the name of a user role (like `ROLE_ADMIN` or
-`ROLE_AUDIT`), and they often have special formats (like the `ROLE_`
-prefix) or represent expressions that need to be evaluated.
+`Object` 는 `AccessDecisionManager` 와 `AccessDecisionVoter` 의 시그니처에서 완전히 일반화 되어 있다 - 이 객체는 사용자가 액세스 하고자 하는 모든 것을 나타낸다 (웹 리소스 또는 Java 클래스의 메도드가 가장 일반적인 두 가지 케이스이다). `ConfigAttributes` 는 또한 상당히 일반적이어서, 액세스에 필요한 권한 수준을 결정하는 일부 메타 데이터로 꾸며진 안전한 `Object` 를 나타낸다. `ConfigAttribute` 는 인터페이스이지만 매우 일반적인 하나의 메소드만 가지고 있고 `String` 반환하기 때문에, 이 문자열은 어떤 식 으로든 리소스 소유자의 의도를 인코딩하여 누가 액세스 할 수 있는지에 대한 규칙을 표현한다. 전형적인 `ConfigAttribute` 는 사용자 역할의 이름 (예 : `ROLE_ADMIN` 또는 `ROLE_AUDIT`)이며, 특수 형식 (예 : `ROLE_` 접두어)을 갖거나 평가해야하는 표현식을 나타낸다.
 
-Most people just use the default `AccessDecisionManager` which is
-`AffirmativeBased` (if no voters decline then access is granted). Any
-customization tends to happen in the voters, either adding new ones,
-or modifying the way that the existing ones work.
+대부분의 사람들은 `AffirmativeBased` 인 기본 `AccessDecisionManager` 를 사용한다. (유권자가 거부하지 않으면 액세스가 허용한다). 모든 사용자 정의는 유권자가 새로운 경향을 추가하거나 기존의 방식을 수정하는 경향이 있다.
 
-It is very common to use `ConfigAttributes` that are Spring Expression
-Language (SpEL) expressions, for example `isFullyAuthenticated() &&
-hasRole('FOO')`. This is supported by an `AccessDecisionVoter` that
-can handle the expressions and create a context for them. To extend
-the range of expressions that can be handled requires a custom
-implementation of `SecurityExpressionRoot` and sometimes also
-`SecurityExpressionHandler`.
+`isFullyAuthenticated() && hasRole ('FOO')` 와 같이 Spring Expression Language (SpEL) 표현식인 `ConfigAttributes` 를 사용하는 것은 매우 일반적이다. 이는 표현식을 처리하고 컨텍스트를 작성할 수있는 `AccessDecisionVoter` 를 지원한다. 처리 할 수있는 표현식 범위를 확장하려면 `SecurityExpressionRoot` 및 때로는 `SecurityExpressionHandler` 의 사용자 정의 구현이 필요하다.
 
 == Web Security
 
