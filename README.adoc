@@ -82,7 +82,7 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 }
 ----
 
-이 예제는 웹 애플리케이션과 관련되어 있지만 `AuthenticationManagerBuilder` 의 사용법은 보다 광범위하게 적용될 수 있다 (웹 애플리케이션 보안 구현 방법에 대한 자세한 내용은 아래 참조). `AuthenticationManagerBuilder` 는 `@Bean` 의 메소드에 `@Autowired` 된다는 점에 유의해라. 이것은 전역 (부모) `AuthenticationManager` 를 만드는 부분이다. 대조적으로 우리가 이 방법으로 했을 경우:
+이 예제는 웹 애플리케이션과 관련되어 있지만 `AuthenticationManagerBuilder` 의 사용법은 보다 광범위하게 적용될 수 있다 (웹 애플리케이션 시큐리티 구현 방법에 대한 자세한 내용은 아래 참조). `AuthenticationManagerBuilder` 는 `@Bean` 의 메소드에 `@Autowired` 된다는 점에 유의해라. 이것은 전역 (부모) `AuthenticationManager` 를 만드는 부분이다. 대조적으로 우리가 이 방법으로 했을 경우:
 
 [source, java]
 ----
@@ -128,93 +128,33 @@ int vote(Authentication authentication, S object,
 
 대부분의 사람들은 `AffirmativeBased` 인 기본 `AccessDecisionManager` 를 사용한다. (유권자가 거부하지 않으면 액세스가 허용한다). 모든 사용자 정의는 유권자가 새로운 경향을 추가하거나 기존의 방식을 수정하는 경향이 있다.
 
-`isFullyAuthenticated() && hasRole ('FOO')` 와 같이 Spring Expression Language (SpEL) 표현식인 `ConfigAttributes` 를 사용하는 것은 매우 일반적이다. 이는 표현식을 처리하고 컨텍스트를 작성할 수있는 `AccessDecisionVoter` 를 지원한다. 처리 할 수있는 표현식 범위를 확장하려면 `SecurityExpressionRoot` 및 때로는 `SecurityExpressionHandler` 의 사용자 정의 구현이 필요하다.
+`isFullyAuthenticated() && hasRole('FOO')` 와 같이 Spring Expression Language (SpEL) 표현식인 `ConfigAttributes` 를 사용하는 것은 매우 일반적이다. 이는 표현식을 처리하고 컨텍스트를 작성할 수있는 `AccessDecisionVoter` 를 지원한다. 처리 할 수있는 표현식 범위를 확장하려면 `SecurityExpressionRoot` 및 때로는 `SecurityExpressionHandler` 의 사용자 정의 구현이 필요하다.
 
-== Web Security
 
-Spring Security in the web tier (for UIs and HTTP back ends) is based
-on Servlet `Filters`, so it is helpful to look at the role of
-`Filters` generally first. The picture below shows the typical
-layering of the handlers for a single HTTP request.
+== 웹 보안
 
-image::{images}/filters.png[Filter chain delegating to a Servlet,70%]
+웹 티어 (UI 및 HTTP 백엔드)의 Spring Security는 Servlet `Filters` 를 기반으로 하므로 일반적으로 먼저 `Filters` 의 역할을 살펴 보는 것이 도움이 된다. 아래 그림은 단일 HTTP 요청에 대한 핸들러의 일반적인 계층화를 보여준다.
 
-The client sends a request to the app, and the container decides which
-filters and which servlet apply to it based on the path of the request
-URI. At most one servlet can handle a single request, but filters form
-a chain, so they are ordered, and in fact a filter can veto the rest
-of the chain if it wants to handle the request itself. A filter can
-also modify the request and/or the response used in the downstream
-filters and servlet. The order of the filter chain is very important,
-and Spring Boot manages it through 2 mechanisms: one is that `@Beans`
-of type `Filter` can have an `@Order` or implement `Ordered`, and the
-other is that they can be part of a `FilterRegistrationBean` that
-itself has an order as part of its API. Some off-the-shelf filters
-define their own constants to help signal what order they like to be
-in relative to each other (e.g. the `SessionRepositoryFilter` from
-Spring Session has a `DEFAULT_ORDER` of `Integer.MIN_VALUE + 50`,
-which tells us it likes to be early in the chain, but it doesn't rule
-out other filters coming before it).
+image::{images}/filters.png[서블릿에 위임하는 필터 체인,70%]
 
-Spring Security is installed as a single `Filter` in the chain, and
-its concerete type is `FilterChainProxy`, for reasons that will become
-apparent soon. In a Spring Boot app the security filter is a `@Bean`
-in the `ApplicationContext`, and it is installed by default so that it
-is applied to every request. It is installed at a position defined by
-`SecurityProperties.DEFAULT_FILTER_ORDER`, which in turn is anchored
-by `FilterRegistrationBean.REQUEST_WRAPPER_FILTER_MAX_ORDER` (the
-maximum order that a Spring Boot app expects filters to have if they
-wrap the request, modifying its behaviour). There's more to it than
-that though: from the point of view of the container Spring Security
-is a single filter, but inside it there are additional filters, each
-playing a special role. Here's a picture:
+클라이언트는 앱에 요청을 보내고 컨테이너는 요청 URI의 경로를 기반으로 어떤 필터와 서블릿을 적용 할지를 결정한다. 하나의 서블릿이 하나의 요청을 처리 할 수 ​​있지만, 필터는 체인을 형성하여 순서가 매겨지며 실제로 요청 자체를 처리하려는 경우 필터가 나머지 체인을 거부 할 수 있다. 필터는 또한 다운스트림 필터 과 서블릿에서 사용된 요청 또는 응답을 수정할 수 있다. 필터 체인의 순서는 매우 중요하며, Spring Boot는 두 가지 메커니즘을 통해 이를 관리한다. 하나는 `Filter` 타입의 `@Beans` 는 `@Order` 를 갖거나 `Ordered` 를 구현할 수 있고, 다른 하나는 자체적으로 API의 일부로 주문한 `FilterRegistrationBean` 의 일부가 될 수 있다는 것 이다. 일부 상용 필터는 자신의 상수를 정의하여 서로 상대적인 순서를 알려준다 (예: Spring Session의 `SessionRepositoryFilter` 는 `DEFAULT_ORDER` 가 `Integer.MIN_VALUE + 50` 이며 체인의 초기 단계에있는 것이 좋지만 이전에 오는 다른 필터는 배제하지 않는다).
 
-.Spring Security is a single physical `Filter` but delegates processing to a chain of internal filters
-image::{images}/security-filters.png[Spring Security Filter,70%]
+Spring Security는 체인에 하나의 `Filter` 로 설치되며, 그것의 구체적인 타입은 `FilterChainProxy` 이다. Spring Boot 애플리케이션에서 시큐티티 필터는 `ApplicationContext` 의 `@Bean` 이며 모든 요청에 적용되도록 기본적으로 설치된다. `SecurityProperties.DEFAULT_FILTER_ORDER` 에 정의된 위치에 설치되며, `FilterRegistrationBean.REQUEST_WRAPPER_FILTER_MAX_ORDER` (Spring Boot 애플리케이션이 요청을 감싸고 동작을 수정하는 경우 필터가 기대하는 최대 순서)에 의해 고정된다. 컨테이너의 관점에서 Spring Security는 단일 필터이지만, 그 안에는 특별한 역할을 하는 추가 필터가 있다. 여기에 그림이 있다.
 
-In fact there is even one more layer of indirection in the security
-filter: it is usually installed in the container as a
-`DelegatingFilterProxy`, which does not have to be a Spring
-`@Bean`. The proxy delegates to a `FilterChainProxy` which is always a
-`@Bean`, usually with a fixed name of `springSecurityFilterChain`.  It
-is the `FilterChainProxy` which contains all the security logic
-arranged internally as a chain (or chains) of filters. All the filters
-have the same API (they all implement the `Filter` interface from the
-Servlet Spec) and they all have the opportunity to veto the rest of
-the chain.
+.Spring Security는 하나의 물리적인 `Filter` 이지만 내부 필터 체인에 대한 처리를 위임한다
+image::{images}/security-filters.png[Spring Security 필터,70%]
 
-There can be multiple filter chains all managed by Spring Security in
-the same top level `FilterChainProxy` and all unknown to the
-container. The Spring Security filter contains a list of filter
-chains, and dispatches a request to the first chain that matches
-it. The picture below shows the dispatch happening based on matching
-the request path (`/foo/{all}` matches before `/{all}`). This is very
-common but not the only way to match a request. The most important
-feature of this dispatch process is that only one chain ever handles a
-request.
+실제로 시큐리티 필터에는 간접적인 계층이 하나 더 있다. 일반적으로 컨테이너에 `DelegatingFilterProxy` 로 설치되며, `DelegatingFilterProxy` 는 스프링 `@Bean` 일 필요는 없다. 프록시는 항상 `@Bean` 인 `FilterChainProxy` 에 위임한다. 일반적으로 고정된 이름은 `springSecurityFilterChain` 이다. `FilterChainProxy` 는 내부적으로 필터의 체인(또는 체인)으로 나열된 모든 보안 로직을 포함한다. 모든 필터에는 동일한 API가 있고 (모두 Servlet 사양의 '필터'인터페이스를 구현합니다), 그들 모두 나머지 체인을 거부 할 수 있는 기회를 갖고 있다.
 
-.The Spring Security `FilterChainProxy` dispatches requests to the first chain that matches.
+여러개의 필터 체인은 모두 컨테이너에 알려지지 않고 동일 최상위 레벨에 있는 `FilterChainProxy` 안에서 `Spring Security` 에 의해 모두 관리된다. Spring Securiy 필터는 필터 체인의 리스트를 포함하고, 그것과 일치하는 첫 번째 체인에 요청을 보낸다. 아래 그림은 요청 경로 (`/foo/{all}` 가 `/{all}` 앞에 일치)와 일치하는 경우 발생하는 발송을 보여준다. 이것은 매우 일반적이지만 요청을 일치시키는 유일한 방법은 아니다. 이 디스패치 프로세스의 가장 중요한 특징은 하나의 체인만 요청을 처리한다는 것 이다.
+
+.Spring Security `FilterChainProxy` 는 일치하는 첫 번째 체인에 요청을 전달한다.
 image::{images}/security-filters-dispatch.png[Security Filter Dispatch,70%]
 
-A vanilla Spring Boot application with no custom security
-configuration has a several (call it n) filter chains, where usually
-n=6. The first (n-1) chains are there just to ignore static resource
-patterns, like `/css/{all}` and `/images/{all}`, and the error view
-`/error` (the paths can be controlled by the user with
-`security.ignored` from the `SecurityProperties` configuration
-bean). The last chain matches the catch all path `/{all}` and is more
-active, containing logic for authentication, authorization, exception
-handling, session handling, header writing, etc. There are a total of
-11 filters in this chain by default, but normally it is not necessary
-for users to concern themselves with which filters are used and when.
+사용자 지정 security 설정이 없는 바닐라 Spring Boot 애플리케이션에는 여러 개의 (n이라고 부름) 필터 체인이 있으며, 일반적으로 n=6이다. 첫 번째 (n-1) 체인은 `/css/{all}` 및 `/images/{all}` 와 같은 정적 리소스 패턴과 에러 뷰 `/error` 를 무시하기 위한 것 이다 (경로는 `SecurityProperties` 설정 빈에서 `security.ignored` 를 사용하여 사용자가 제어 할 수 있다). 마지막 체인은 모든 경로 `/{all}` 와 일치하며 인증, 권한 부여, 예외 처리, 세션 처리, 헤더 쓰기 등을 위한 논리를 포함하여 더 활동적이다. 기본적으로 이 체인에 총 11개의 필터가 있지만, 일반적으로 사용자는 어떤 필터가 사용되는지, 언제 사용되는지에 대해 스스로 신경을 쓸 필요가 없다.
 
-NOTE: The fact that all filters internal to Spring Security are
-unknown to the container is important, especially in a Spring Boot
-application, where all `@Beans` of type `Filter` are registered
-automatically with the container by default. So if you want to add a
-custom filter to the security chain, you need to either not make it a
-`@Bean` or wrap it in a `FilterRegistrationBean` that explicitly
-disables the container registration.
+NOTE: 특히 Spring Boot 애플리케이션에서 Spring Security 내부의 모든 필터를 알 수 없다는 사실은 중요하다. `Filter` 타입의 모든 `@Beans` 은 기본적으로 컨테이너에 자동으로 등록 된다. 따라서 사용자 정의 필터를 시큐리티 체인에 추가하려면, `@Bean` 으로 만들거나 명시적으로 컨테이너 등록을 비활성화하는 `FilterRegistrationBean` 으로 포장하지 않아야 한다.
+
 
 === Creating and Customizing Filter Chains
 
