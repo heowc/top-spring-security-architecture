@@ -18,7 +18,7 @@
 
 인증을 위한 주요 전략 인터페이스는 오직 하나의 메소드만 가진 `AuthenticationManager` 이다:
 
-[source,java]
+[source, java]
 ----
 public interface AuthenticationManager {
 
@@ -32,15 +32,15 @@ public interface AuthenticationManager {
 
 1. 입력이 유효한 principal를 나타낼 수 있는 경우는 `Authentication` (일반적으로는 `authenticated=true`)을 반환한다.
 
-2. 입력이 무효인 principal를 나타내고 있는 것 이라고 판단했을 경우는 `AuthenticationException`를 던진다.
+2. 입력이 무효인 principal를 나타내고 있는 것 이라고 판단했을 경우는 `AuthenticationException` 를 던진다.
 
-3. 결정할 수 없는 경우는 `null`를 반환한다.
+3. 결정할 수 없는 경우는 `null` 를 반환한다.
 
 `AuthenticationException` 은 runtime exception이다. 보통 애플리케이션의 스타일이나 용도에 따른 일반적인 방식으로 애플리케이션에서 처리된다. 다시 말해서 사용자 코드는 일반적으로 이를 잡아서 처리하지 못 한다. 예를 들어, 웹 UI는 인증이 실패했다는 것을 나타내는 페이지를 렌더링 하고, 백엔드 HTTP 서비스는 컨텍스트에 따라 `WWW-Authenticate` header의 유무와 상관없이 401 응답을 보낼 것 이다.
 
 `AuthenticationManager` 의 가장 일반적으로 사용되는 구현은 `ProviderManager` 는 일련의 `AuthenticationProvider` 인스턴스들에 위임한다. `AuthenticationProvider` 는 `AuthenticationManager` 와 약간 비슷하다. 하지만, `AuthenticationProvider` 는 호출자가 주어진 `Authentication` 타입을 지원 하는지를 질의 할 수 있는 추가 메소드가 있다 :
 
-[source,java]
+[source, java]
 ----
 public interface AuthenticationProvider {
 
@@ -103,9 +103,9 @@ public class ApplicationSecurity extends WebSecurityConfigurerAdapter {
 }
 ----
 
-(configurer의 메소드의 `@Override` 를 사용하면) `AuthenticationManagerBuilder` 는 오직 "local" `AuthenticationManager` 를 구축하는데 사용된다. Spring Boot에서는 전역 bean을 다른 bean에 `@Autowired` 할 수는 있지만, 명시적으로 직접 노출하지 않는 한 지역 bean으로는 할 수 없다.
+(configurer의 메소드의 `@Override` 를 사용하면) `AuthenticationManagerBuilder` 는 오직 "local" `AuthenticationManager` 를 구축하는데 사용된다. Spring Boot에서는 전역 Bean을 다른 bean에 `@Autowired` 할 수는 있지만, 명시적으로 직접 노출하지 않는 한 지역 Bean으로는 할 수 없다.
 
-Spring Boot는 `AuthenticationManager` 타입의 bean을 제공함으로써 먼저 차지하지 않는 한 (하나의 user만 가진) 기본 전역 `AuthenticationManager` 를 제공한다. 기본값은 사용자 정의 전역 `AuthenticationManager` 를 적극적으로 필요로 하지 않는다면, 걱정할 필요가 없을 정도로 충분히 안전하다. `AuthenticationManager` 를 만드는 설정을 하는 경우는 보호하고 있는 리소스에 대해서 지역적으로 수행할 수 있고 전역의 기본에 대해서는 걱정하지 마라.
+Spring Boot는 `AuthenticationManager` 타입의 Bean을 제공함으로써 먼저 차지하지 않는 한 (하나의 user만 가진) 기본 전역 `AuthenticationManager` 를 제공한다. 기본값은 사용자 정의 전역 `AuthenticationManager` 를 적극적으로 필요로 하지 않는다면, 걱정할 필요가 없을 정도로 충분히 안전하다. `AuthenticationManager` 를 만드는 설정을 하는 경우는 보호하고 있는 리소스에 대해서 지역적으로 수행할 수 있고 전역의 기본에 대해서는 걱정하지 마라.
 
 
 === 권한 부여 또는 액세스 제어
@@ -156,17 +156,11 @@ image::{images}/security-filters-dispatch.png[Security Filter Dispatch,70%]
 NOTE: 특히 Spring Boot 애플리케이션에서 Spring Security 내부의 모든 필터를 알 수 없다는 사실은 중요하다. `Filter` 타입의 모든 `@Beans` 은 기본적으로 컨테이너에 자동으로 등록 된다. 따라서 사용자 정의 필터를 시큐리티 체인에 추가하려면, `@Bean` 으로 만들거나 명시적으로 컨테이너 등록을 비활성화하는 `FilterRegistrationBean` 으로 포장하지 않아야 한다.
 
 
-=== Creating and Customizing Filter Chains
+=== 필터 체인 생성 및 커스터마이징
 
-The default fallback filter chain in a Spring Boot app (the one with
-the `/{all}` request matcher) has a predefined order of
-`SecurityProperties.BASIC_AUTH_ORDER`. You can switch it off
-completely by setting `security.basic.enabled=false`, or you can use
-it as a fallback and just define other rules with a lower order. To do
-that just add a `@Bean` of type `WebSecurityConfigurerAdapter` (or
-`WebSecurityConfigurer`) and decorate the class with `@Order`. Example:
+Spring Boot 앱(`/**` 의 요청 일치자)의 기본 fallback 필터 체인은 `SecurityProperties.BASIC_AUTH_ORDER` 라는 미리 정의된 순서를 가진다. `security.basic.enabled=false` 를 설정하여 완전히 비활성화 할 수 있다. 그렇지 않으면 그것을 fallback으로 사용하고 더 낮은 순위의 다른 규칙을 정의 할 수 있다. 그렇게하려면 `WebSecurityConfigurerAdapter`(또는 `WebSecurityConfigurer`)타입의 `@Bean` 을 추가하고 `@Order` 로 클래스를 꾸며라. 예:
 
-[source,java]
+[source, java]
 ----
 @Configuration
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 10)
@@ -179,30 +173,16 @@ public class ApplicationConfigurerAdapter extends WebSecurityConfigurerAdapter {
 }
 ----
 
-This bean will cause Spring Security to add a new filter chain and
-order it before the fallback.
+이 Bean은 Spring Security가 새로운 필터 체인을 추가하고 fallback하기 전에 그것을 정렬하게 할 것 이다.
 
-Many applications have completely different access rules for one set
-of resources compared to another. For example an application that
-hosts a UI and a backing API might support cookie-based authentication
-with a redirect to a login page for the UI parts, and token-based
-authentication with a 401 response to unauthenticated requests for the
-API parts. Each set of resources has its own
-`WebSecurityConfigurerAdapter` with a unique order and a its own
-request matcher. If the matching rules overlap the earliest ordered
-filter chain will win.
+많은 애플리케이션은 하나의 자원 집합에 대해서 다른 규칙과는 완전히 다른 액세스 규칙을 가진다. 예를 들어 UI와 API를 호스팅하는 애플리케이션은 UI 부분의 로그인 페이지로 리디렉션되는 쿠키 기반 인증과 API 부분에 대한 인증되지 않은 요청에 대한 401 응답의 토큰 기반 인증을 지원할 수 있다. 각 자원 세트에는 고유 한 순서와 자신만의 요청 일치자를 가진 자체 `WebSecurityConfigurerAdapter` 가 있다. 일치하는 규칙이 겹쳐지면 가장 먼저 정해진 필터 체인이 이길 것 이다.
 
-=== Request Matching for Dispatch and Authorization
 
-A security filter chain (or equivalently a
-`WebSecurityConfigurerAdapter`) has a request matcher that is used for
-deciding whether to apply it to an HTTP request. Once the decision is
-made to apply a particular filter chain, no others are applied. But
-within a filter chain you can have more fine grained control of
-authorization by setting additional matchers in the `HttpSecurity`
-configurer. Example:
+=== 전달과 권한부여에 대한 요청 일치
 
-[source,java]
+시큐리티 필터 체인 (또는 `WebSecurityConfigurerAdapter` 와 동일하게)에는 HTTP 요청에 적용할지 여부를 결정하는데 사용되는 요청 일치자가 있다. 특정 필터 체인을 적용하기로 결정하면, 다른 필터 체인은 적용되지 않는다. 하지만 필터 체인 내에서 `HttpSecurity` 구성자에 추가 일치자를 설정하여 보다 세분화된 권한 제어 권한을 가질 수 있다. 예:
+
+[source, java]
 ----
 @Configuration
 @Order(SecurityProperties.BASIC_AUTH_ORDER - 10)
@@ -218,32 +198,16 @@ public class ApplicationConfigurerAdapter extends WebSecurityConfigurerAdapter {
 }
 ----
 
-One of the easiest mistakes to make with configuring Spring Security
-is to forget that these matchers apply to different processes, one is
-a request matcher for the whole filter chain, and the other is only to
-choose the access rule to apply.
+Spring Security를 구성하면서 가장 실수하기 쉬운 것 중 하나는 이러한 프로세스가 다른 프로세스에 적용된다는 것을 잊어버리는 것 이다. 하나는 전체 필터 체인에 대한 요청 일치자이고, 다른 하나는 적용할 액세스 규칙을 선택하는 것 이다.
 
-=== Combining Application Security Rules with Actuator Rules
 
-If you are using the Spring Boot Actuator for management endpoints,
-you probably want them to be secure, and by default they will be. In
-fact as soon as you add the Actuator to a secure application you get
-an additional filter chain that applies only to the actuator
-endpoints. It is defined with a request matcher that matches only
-actuator endpoints and it has an order of
-`ManagementServerProperties.BASIC_AUTH_ORDER` which is 5 fewer than
-the default `SecurityProperties` fallback filter, so it is consulted
-before the fallback.
+=== 애플리케이션 시큐리티 규칙을 Actuator 규칙과 결합
 
-If you want your application security rules to apply to the actuator
-endpoints you can add a filter chain ordered earlier than the actuator
-one and with a request matcher that includes all actuator
-endpoints. If you prefer the default security settings for the
-actuator endpoints, then the easiest thing is to add your own filter
-later than the actuator one, but earlier than the fallback
-(e.g. `ManagementServerProperties.BASIC_AUTH_ORDER + 1`). Example:
+관리 엔드 포인트용 Spring Boot Actuator를 사용하는 경우, 보안을 유지하기를 원할 것 이다. 실제로 Actuator를 안전한 애플리케이션에 추가하면 Actuator 엔드 포인트에만 적용되는 추가 필터 체인이 생긴다. Actuator 엔드 포인트와 일치하는 요청 일치자를 사용하여 정의되며 `ManagementServerProperties.BASIC_AUTH_ORDER` 의 순서는 기본 `SecurityProperties` fallback 필터보다 5작기 때문에, fallback 전에 참조된다.
 
-[source,java]
+애플리케이션 시큐리티 규칙을 Actuator 엔드 포인트에 적용하려면 Actuator 보다 먼저 정렬된 필터 체인과 모든 Actuator 엔드 포인트을 포함하는 요청 일치자를 추가 할 수 있다. Actuator 엔드 포인트에 대한 기본 시큐리티 설정을 선호하는 경우, 가장 쉬운 방법은 Actuator보다 나중에 자신의 필터를 추가하는 것 이다 (예 : `ManagementServerProperties.BASIC_AUTH_ORDER + 1`). 예:
+
+[source, java]
 ----
 @Configuration
 @Order(ManagementServerProperties.BASIC_AUTH_ORDER + 1)
@@ -256,24 +220,15 @@ public class ApplicationConfigurerAdapter extends WebSecurityConfigurerAdapter {
 }
 ----
 
-NOTE: Spring Security in the web tier is currently tied to the Servlet
-API, so it is only really applicable when running an app in a servlet
-container, either embedded or otherwise. It is not, however, tied to
-Spring MVC or the rest of the Spring web stack, so it can be used in
-any servlet application, for instance one using JAX-RS.
+NOTE: 웹 티어의 Spring Security는 현재 서블릿 API에 묶여 있으므로 임베디드 또는 기타 서블릿 컨테이너에서 앱을 실행할 때만 적용된다. 그러나 Spring MVC 또는 나머지 Spring 웹 스택에 연결되지 않으므로 모든 서블릿 애플리케이션에서 사용할 수 있다. 예를 들어 JAX-RS를 사용하는 애플리케이션일 수 있다.
+
 
 == Method Security
 
-As well as support for securing web applications, Spring Security
-offers support for applying access rules to Java method
-executions. For Spring Security this is just a different type of
-"protected resource". For users it means the access rules are declared
-using the same format of `ConfigAttribute` strings (e.g. roles or
-expressions), but in a different place in your code. The first step is
-to enable method security, for example in the top level configuration
-for our app:
+Spring Security는 웹 애플리케이션 보안을 지원할뿐 아니라 자바 메소드 실행에 액세스 규칙을 적용 할 수 있도록 지원한다. Spring Security의 경우 이것은 "보호된 자원"
+과 다른 유형이다. 사용자의 경우 동일한 형식의 `ConfigAttribute` 문자열 (예: 역할 또는 표현식)을 사용하지만 코드의 다른 위치에서 액세스 규칙이 선언됨을 의미한다. 첫 번째 단계는 method secuirty를 가능하게 하는 것 이다 (예: 앱의 최상위 레벨 구성):
 
-[source,java]
+[source, java]
 ----
 @SpringBootApplication
 @EnableGlobalMethodSecurity(securedEnabled = true)
@@ -281,9 +236,9 @@ public class SampleSecureApplication {
 }
 ----
 
-Then we can decorate the method resources directly, e.g.
+그런 다음 메소드 자원을 직접 꾸밀 수 있다. 예.
 
-[source,java]
+[source, java]
 ----
 @Service
 public class MyService {
@@ -296,51 +251,29 @@ public class MyService {
 }
 ----
 
-This sample is a service with a secure method. If Spring creates a
-`@Bean` of this type then it will be proxied and callers will have to
-go through a security interceptor before the method is actually
-executed. If the access is denied the caller will get an
-`AccessDeniedException` instead of the actual method result.
+이 샘플은 secure method가 있는 서비스이다. 만약 Spring이 이런 타입의 `@Bean` 을 생성하면 메소드가 실제로 실행되기 전에 호출자가 시큐리티 인터셉터를 통과해야 한다. 액세스가 거부되면 호출자는 실제 메소드 결과 대신 `AccessDeniedException` 을 가져온다.
 
-There are other annotations that can be used on methods to enforce
-security constraints, notably `@PreAuthorize` and `@PostAuthorize`,
-which allow you to write expressions containing references to method
-parameters and return values respectively.
+`@PreAuthorize` 와 `@PostAuthorize` 같은 시큐리티 제약 조건을 적용하는 메서드에 사용할 수 있는 다른 애노테이션이 있으며, 메소드 매개 변수 및 반환 값에 대한 참조를 포함하는 표현식을 작성할 수 있다.
 
-TIP: It is not uncommon to combine Web security and method
-security. The filter chain provides the user experience features, like
-authentication and redirect to login pages etc, and the method
-security provides protection at a more granular level.
+TIP: 웹 시큐리티과 메소드 시큐리티를 결합하는 것은 흔하지 않다. 필터 체인은 인증 및 로그인 페이지로의 리디렉션 등과 같은 사용자 경험 기능을 제공하며, 메서드 시큐리티는 보다 세부적인 수준의 보호 기능을 제공한다.
 
-== Working with Threads
 
-Spring Security is fundamentally thread bound because it needs to make
-the current authenticated principal available to a wide variety of
-downstream consumers. The basic building block is the
-`SecurityContext` which may contain an `Authentication` (and when a
-user is logged in it will be an `Authentication` that is explicitly
-`authenticated`). You can always access and manipulate the
-`SecurityContext` via static convenience methods in
-`SecurityContextHolder` which in turn simply manipulate a
-`TheadLocal`, e.g.
+== Thread 작업하기
 
-[source,java]
+Spring Security는 근본적으로 thread bound 이다. 왜냐하면 현재 인증된 principal을 다양한 다운스트림 소비자들이 사용할 수 있도록 해야하기 때문이다. 기본 구조 단위는 `Authentication` 을 포함 할 수 있는 `SecurityContext` 이다 (사용자가 로그인하면 명시적으로 인증된 `Authentication` 이 된다). `SecurityContextHolder` 의 정적 편의(?) 메소드를 통해 항상 `SecurityContext` 에 액세스하고 조작 할 수 있다. `SecurityContextHolder` 는 `TheadLocal` 을 조작한다. 예.
+
+[source, java]
 ----
 SecurityContext context = SecurityContextHolder.getContext();
 Authentication authentication = context.getAuthentication();
 assert(authentication.isAuthenticated);
 ----
 
-It is *not* common for user application code to do this, but it can be
-useful if you, for instance, need to write a custom authentication
-filter (although even then there are base classes in Spring Security
-that can be used where you would avoid needing to use the
-`SecurityContextHolder`).
+사용자 애플리케이션 코드에서 이 작업을 수행하는 것은 일반적이지 **않지만**, 예를 들어 사용자 정의 인증 필터를 작성해야하는 경우 유용 할 수 있다 (그렇더라도 `SecurityContextHolder` 를 사용할 필요가 없는 곳에서 사용할 수 있는 Spring Security에 기본 클래스가 있다).
 
-If you need access to the currently authenticated user in a web
-endpoint, you can use a method parameter in a `@RequestMapping`. E.g.
+웹 엔드 포인트에서 현재 인증된 사용자에게 액세스해야하는 경우, `@RequestMapping` 에서 메소드 매개 변수를 사용할 수 있다. 예:
 
-[source,java]
+[source, java]
 ----
 @RequestMapping("/foo")
 public String foo(@AuthenticationPrincipal User user) {
@@ -348,17 +281,11 @@ public String foo(@AuthenticationPrincipal User user) {
 }
 ----
 
-This annotation pulls the current `Authentication` out of the
-`SecurityContext` and calls the `getPrincipal()` method on it to yield
-the method parameter. The type of the `Principal` in an
-`Authentication` is dependent on the `AuthenticationManager` used to
-validate the authentication, so this can be a useful little trick to get a type safe reference to your user data.
+이 애노테이션은 현재 `Authentication` 을 `SecurityContext` 에서 꺼내서 `getPrincipal()` 메소드를 호출해 메소드 매개 변수로 생성한다. `Authentication` 의 `Principal` 타입은 인증을 확인하는데 사용되는 `AuthenticationManager` 에 따라 달라지므로, 사용자 데이터에 대한 타입 안전 참조를 얻는 것이 유용 할 수 있다.
 
-If Spring Security is in use the `Principal` from the
-`HttpServletRequest` will be of type `Authentication`, so you can also
-use that directly:
+Spring Security를 사용 중 이면 `HttpServletRequest` 의 `Principal` 은 `Authentication` 타입이므로, 직접 사용할 수도 있다:
 
-[source,java]
+[source, java]
 ----
 @RequestMapping("/foo")
 public String foo(Principal principal) {
@@ -368,23 +295,14 @@ public String foo(Principal principal) {
 }
 ----
 
-This can sometimes be useful if you need to write code that works when
-Spring Security is not in use (you would need to be more defensive
-about loading the `Authentication` class).
+때때로 Spring Security가 사용되지 않을 때 작동하는 코드를 작성해야 하는 경우에 유용 할 수 있다 (`Authentication` 클래스를 로드하는 것에 대해 더 방어해야 합니다).
 
-=== Processing Secure Methods Asynchronously
 
-Since the `SecurityContext` is thread bound, if you want to do any
-background processing that calls secure methods, e.g. with `@Async`,
-you need to ensure that the context is propagated. This boils down to
-wrapping the `SecurityContext` up with the task (`Runnable`,
-`Callable` etc.) that is executed in the background. Spring Security
-provides some helpers to make this easier, such as wrappers for
-`Runnable` and `Callable`.  To propagate the `SecurityContext` to
-`@Async` methods you need to supply an `AsyncConfigurer` and ensure
-the `Executor` is of the correct type:
+=== 비동기로 Secure Method 처리
 
-[source,java]
+`SecurityContext` 가 thread bound 이기 때문에 백그라운드 처리에서 secure method를 호출하는 호출하려는 경우, 예를 들면 `@Async` 에서 컨텍스트가 전달되는지 확인해야 한다. 이것은 백그라운드에서 실행되는 작업 (`Runnable`, `Callable` 등)으로 `SecurityContext` 를 래핑하는 것으로 귀결된다. Spring Security는 `Runnable` 과 `Callable` 에 대한 랩퍼와 같은 좀 더 쉬운 헬퍼을 제공한다. `SecurityContext` 를 `@Async` 메소드에 전달하려면 `AsyncConfigurer` 를 제공하고 `Executor` 가 올바른 타입인지 확인 해야한다.
+
+[source, java]
 ----
 @Configuration
 public class ApplicationConfiguration extends AsyncConfigurerSupport {
